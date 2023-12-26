@@ -1,11 +1,14 @@
 package org.gautelis.gedcom2latex.model;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 public class GEDCOMRecord {
+    private static final Logger log = LoggerFactory.getLogger(GEDCOMRecord.class);
 
     final long level;
 
@@ -29,6 +32,7 @@ public class GEDCOMRecord {
     }
 
     public void addRecord(GEDCOMRecord record) {
+        log.debug("At record " + this + ", adding record " + record);
         orderedSubRecords.add(record);
     }
 
@@ -70,14 +74,14 @@ public class GEDCOMRecord {
     public void deepToString(StringBuffer buf) {
         buf.append("[");
         addDetails(buf);
-        buf.append("{");
-        buf.append(orderedSubRecords.size() + ":");
-        for (GEDCOMRecord record : orderedSubRecords) {
-            buf.append("[");
-            record.addDetails(buf);
-            buf.append("]");
+        if (!orderedSubRecords.isEmpty()) {
+            buf.append(" {").append(orderedSubRecords.size() + ":");
+            for (GEDCOMRecord record : orderedSubRecords) {
+                record.deepToString(buf);
+            }
+            buf.append("}");
         }
-        buf.append("}]");
+        buf.append("]");
     }
 
     private void addDetails(StringBuffer buf) {

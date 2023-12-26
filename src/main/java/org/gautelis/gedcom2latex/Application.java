@@ -7,17 +7,12 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
-import org.apache.commons.cli.ParseException;
-import org.gautelis.gedcom2latex.Loader;
 import org.gautelis.gedcom2latex.model.GEDCOMRecord;
 //import org.stringtemplate.v4.ST;
 //import org.stringtemplate.v4.STGroup;
-//import org.gautelis.gedcom2latex.model.*;
 
 import java.io.*;
 import java.nio.file.Path;
-//import java.time.LocalDate;
-//import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -70,7 +65,7 @@ public class Application {
         }
 
     }
-*/
+    */
 
 
     private static void process(final Collection<Path> gedcomFiles, final Collection<Path> templates, final PrintStream out) {
@@ -151,9 +146,9 @@ public class Application {
 
             process(gedcomFiles, templates, System.out);
         }
-        catch (ParseException exception) {
-            System.err.println(exception.getMessage());
-            exception.printStackTrace(System.err);
+        catch (Throwable t) {
+            System.err.println(t.getMessage());
+            t.printStackTrace(System.err);
         }
     }
 }

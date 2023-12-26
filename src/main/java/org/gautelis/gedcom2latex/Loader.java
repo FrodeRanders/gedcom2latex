@@ -13,7 +13,7 @@ import java.util.stream.Stream;
 
 public class Loader {
 
-    private static final Logger log = LoggerFactory.getLogger(Matcher.class);
+    private static final Logger log = LoggerFactory.getLogger(Loader.class);
 
     // Matches a GEDCOM record on a line: <level> (<pointer>)? <tag> (<data>)?
     private final String RE = "^(?<level>0|[1-9]+[0-9]*) (@(?<pointer>[^@]+)@ |)(?<tag>[A-Za-z0-9_]+)(?<data> [^\n\r]*|)$";

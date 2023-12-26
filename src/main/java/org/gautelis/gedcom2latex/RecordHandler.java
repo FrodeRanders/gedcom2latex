@@ -44,23 +44,23 @@ public class RecordHandler {
 
         // Stack
         if (stack.isEmpty()) {
-            // This should be a top-level record
             assert level == 0L;
         }
         else {
             GEDCOMRecord currentRecord = stack.peek();
-            if (null != currentRecord) {
+            if (record.getLevel() <= currentRecord.getLevel()) {
+                do {
+                    if (stack.isEmpty())
+                        break;
+
+                    currentRecord = stack.pop();
+                    log.trace("Poping: {}", currentRecord);
+                } while (currentRecord.getLevel() > record.getLevel());
+            }
+
+            if (!stack.isEmpty()) {
+                currentRecord = stack.peek();
                 currentRecord.addRecord(record);
-
-                if (record.getLevel() <= currentRecord.getLevel()) {
-                    do {
-                        if (stack.isEmpty())
-                            break;
-
-                        currentRecord = stack.pop();
-                        log.trace("Poping: {}", currentRecord);
-                    } while (currentRecord.getLevel() > record.getLevel());
-                }
             }
         }
 

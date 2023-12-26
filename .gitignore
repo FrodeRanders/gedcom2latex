@@ -2,3 +2,5 @@
 *.ged
 dependency-reduced-pom.xml
 target/
+*.log
+*.txt
