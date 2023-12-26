@@ -1,2 +1,4 @@
 .idea/
 *.ged
+dependency-reduced-pom.xml
+target/

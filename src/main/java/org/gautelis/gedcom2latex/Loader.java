@@ -6,7 +6,6 @@ import org.slf4j.LoggerFactory;
 import java.math.BigInteger;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
-import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -16,6 +15,7 @@ public class Loader {
 
     private static final Logger log = LoggerFactory.getLogger(Matcher.class);
 
+    // Matches a GEDCOM record on a line: <level> (<pointer>)? <tag> (<data>)?
     private final String RE = "^(?<level>0|[1-9]+[0-9]*) (@(?<pointer>[^@]+)@ |)(?<tag>[A-Za-z0-9_]+)(?<data> [^\n\r]*|)$";
     private final Pattern pattern = Pattern.compile(RE);
 
@@ -25,7 +25,12 @@ public class Loader {
         this.handler = handler;
     }
 
-    public static String cutBOM(String value) {
+    /**
+     * Removes (possible) BOM, since it interferes with the RE matching
+     * @param value a string that may contain a UTF-8 BOM (or not)
+     * @return a trimmed string without the BOM
+     */
+    public static String trimBOM(String value) {
         // UTF-8 BOM is EF BB BF, see https://en.wikipedia.org/wiki/Byte_order_mark
         String bom = String.format("%x", new BigInteger(1, value.substring(0, 3).getBytes()));
 
@@ -43,13 +48,15 @@ public class Loader {
     public void load(File file) throws IOException {
         // As of version 7.0, a GEDCOM file is defined as UTF-8 encoded plain text.
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8))) {
+
+            // Read all lines from the file, possibly removing BOM from first line
             AtomicBoolean isFirstLine = new AtomicBoolean(true);
 
             try (Stream<String> lines = reader.lines()) {
                 lines.forEach(line -> {
                     if (isFirstLine.getAndSet(false)) {
                         // First line may contain UTF-8 BOM or ZWNBSP (Zero Width No-Break Space)
-                        line = cutBOM(line.trim());
+                        line = trimBOM(line.trim());
                     }
                     accept(line);
                 });
@@ -64,19 +71,22 @@ public class Loader {
     public void accept(String line) {
         java.util.regex.Matcher matcher = pattern.matcher(line);
         if (matcher.matches()) {
+            // A line matching the GEDCOM record format
             long level = -1L;
             String _level = matcher.group("level");
             if (null != _level && !_level.isEmpty()) {
                 level = Long.parseLong(_level);
             }
 
-            String pointer = matcher.group("pointer");
+            String pointer = matcher.group("pointer"); // may not exist (optional)
             String tag = matcher.group("tag");
-            String data = matcher.group("data");
+            String data = matcher.group("data"); // may not exist (optional)
 
             handler.acceptRecord(level, pointer, tag, data);
 
         } else {
+            // This line does not match a GEDCOM record format, so we assume this line is part of previous
+            // data and that this data contains newlines
             handler.acceptData(line);
         }
     }

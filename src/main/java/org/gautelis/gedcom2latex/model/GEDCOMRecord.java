@@ -62,13 +62,27 @@ public class GEDCOMRecord {
     @Override
     public String toString() {
         StringBuffer buf = new StringBuffer("[");
-        return toString(buf);
+        addDetails(buf);
+        buf.append("]");
+        return buf.toString();
     }
 
-    public String toString(StringBuffer buf) {
+    public void deepToString(StringBuffer buf) {
+        buf.append("[");
+        addDetails(buf);
+        buf.append("{");
+        buf.append(orderedSubRecords.size() + ":");
+        for (GEDCOMRecord record : orderedSubRecords) {
+            buf.append("[");
+            record.addDetails(buf);
+            buf.append("]");
+        }
+        buf.append("}]");
+    }
+
+    private void addDetails(StringBuffer buf) {
         buf.append(level);
 
-        // Optional pointer
         if (null != pointer && !pointer.isEmpty()) {
             buf.append(" @").append(pointer).append("@");
         }
@@ -78,14 +92,5 @@ public class GEDCOMRecord {
         if (!data.isEmpty()) {
             buf.append(" ").append(data.toString().trim());
         }
-        buf.append(" : {");
-        buf.append(orderedSubRecords.size() + " records");
-        //for (GEDCOMRecord record : orderedSubRecords) {
-        //    buf.append(record.toString(buf));
-        //}
-        buf.append("}]");
-
-        return buf.toString();
     }
-
 }

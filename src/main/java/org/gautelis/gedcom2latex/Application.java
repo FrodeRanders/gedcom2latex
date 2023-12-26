@@ -41,7 +41,9 @@ public class Application {
             Map<String, GEDCOMRecord> records = handler.getRecords();
             for (String key : records.keySet()) {
                 GEDCOMRecord record = records.get(key);
-                System.out.println(key + " -> " + record);
+                StringBuffer buf = new StringBuffer(key + " -> ");
+                record.deepToString(buf);
+                System.out.println(buf);
             }
 
             return count;
