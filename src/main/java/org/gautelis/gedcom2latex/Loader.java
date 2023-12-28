@@ -7,7 +7,6 @@ import java.math.BigInteger;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
@@ -19,9 +18,9 @@ public class Loader {
     private final String RE = "^(?<level>0|[1-9]+[0-9]*) (@(?<pointer>[^@]+)@ |)(?<tag>[A-Za-z0-9_]+)(?<data> [^\n\r]*|)$";
     private final Pattern pattern = Pattern.compile(RE);
 
-    private final RecordHandler handler;
+    private final LineHandler handler;
 
-    public Loader(final RecordHandler handler) {
+    public Loader(final LineHandler handler) {
         this.handler = handler;
     }
 
@@ -81,13 +80,12 @@ public class Loader {
             String pointer = matcher.group("pointer"); // may not exist (optional)
             String tag = matcher.group("tag");
             String data = matcher.group("data"); // may not exist (optional)
-
-            handler.acceptRecord(level, pointer, tag, data);
+            handler.accept(level, pointer, tag, data);
 
         } else {
             // This line does not match a GEDCOM record format, so we assume this line is part of previous
             // data and that this data contains newlines
-            handler.acceptData(line);
+            handler.accept(line);
         }
     }
 }

@@ -22,7 +22,7 @@
     </Appenders>
 
     <Loggers>
-        <Logger name="org.gautelis.gedcom2latex" level="TRACE" />
+        <Logger name="org.gautelis.gedcom2latex" level="DEBUG" />
         <Logger name="org.antlr" level="WARN" />
         <Logger name="org.apache" level="WARN" />
 
