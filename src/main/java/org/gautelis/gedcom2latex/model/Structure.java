@@ -1,9 +1,13 @@
 package org.gautelis.gedcom2latex.model;
 
+import org.gautelis.gedcom2latex.model.gedcom.FAM;
+import org.gautelis.gedcom2latex.model.gedcom.HEAD;
+import org.gautelis.gedcom2latex.model.gedcom.INDI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * A structure that captures hierarchical GEDCOM records.
@@ -45,11 +49,9 @@ public class Structure {
     private static final Logger log = LoggerFactory.getLogger(Structure.class);
 
     final long level;
-
     final String pointer;
     final String tag;
     final Map<String, Collection<Structure>> structures = new HashMap<>();
-
     final StringBuffer data = new StringBuffer();
 
     public Structure(long level, String pointer, String tag) {
@@ -79,31 +81,16 @@ public class Structure {
         }
     }
 
-    public Map<String, Collection<Structure>> getStructures() {
-        return structures;
+    public long getLevel() {
+        return level;
     }
 
-    public Collection<Structure> getStructures(String tag) {
-        return structures.computeIfAbsent(tag, k -> new ArrayList<>());
+    public Optional<String> getID() {
+        return Optional.ofNullable(pointer);
     }
 
-    public Optional<Structure> getNestedStructure(String tag) {
-        Collection<Structure> tags = getStructures(tag);
-        return tags.stream().findFirst();
-    }
-
-    public Collection<Structure> getNestedStructures(String tag) {
-        return getStructures(tag);
-    }
-
-    public Optional<String> getNestedData(String tag) {
-        Optional<Structure> structure = getNestedStructure(tag);
-        return structure.flatMap(Structure::getData);
-    }
-
-    public String getNestedData(String tag, String defaultValue) {
-        Optional<String> data = getNestedData(tag);
-        return data.orElse(defaultValue);
+    public String getTag() {
+        return tag;
     }
 
     public Optional<String> getData() {
@@ -120,24 +107,32 @@ public class Structure {
         return data.toString();
     }
 
-
-    public long getLevel() {
-        return level;
+    public Collection<Structure> getNestedStructures(String tag) {
+        return structures.computeIfAbsent(tag, k -> new ArrayList<>());
     }
 
-    public Optional<String> getID() {
-        return Optional.ofNullable(pointer);
+    public Optional<Structure> getNestedStructure(String tag) {
+        Collection<Structure> tags = getNestedStructures(tag);
+        if (tags.size() > 1) {
+            log.warn("Record has {} {}, but we expected 0..1 : {}", tags.size(), tag, this);
+        }
+        return tags.stream().findFirst();
     }
 
-    public String getTag() {
-        return tag;
+    public Optional<String> getNestedData(String tag) {
+        Optional<Structure> structure = getNestedStructure(tag);
+        return structure.flatMap(Structure::getData);
+    }
+
+    public String getNestedData(String tag, String defaultValue) {
+        Optional<String> data = getNestedData(tag);
+        return data.orElse(defaultValue);
     }
 
     @Override
     public String toString() {
-        StringBuffer buf = new StringBuffer("[");
+        StringBuffer buf = new StringBuffer();
         addDetails(buf);
-        buf.append("]");
         return buf.toString();
     }
 
@@ -164,5 +159,21 @@ public class Structure {
         if (!data.isEmpty()) {
             buf.append(" ").append(data.toString().trim());
         }
+    }
+
+    public static Optional<HEAD> getHEAD(Map</* tag/type */ String, Collection<Structure>> structures) {
+        Collection<Structure> heads = structures.get("HEAD");
+        Optional<Structure> head = heads.stream().findFirst();
+        return head.map(HEAD::new);
+    }
+
+    public static Collection<INDI> getINDIs(Map</* tag/type */ String, Collection<Structure>> structures) {
+        Collection<Structure> individuals = structures.get("INDI");
+        return individuals.stream().map(INDI::new).collect(Collectors.toList());
+    }
+
+    public static Collection<FAM> getFAMs(Map</* tag/type */ String, Collection<Structure>> structures) {
+        Collection<Structure> families = structures.get("FAM");
+        return families.stream().map(FAM::new).collect(Collectors.toList());
     }
 }

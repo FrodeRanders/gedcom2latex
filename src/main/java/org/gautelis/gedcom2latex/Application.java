@@ -8,9 +8,11 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
 import org.gautelis.gedcom2latex.model.Structure;
+import org.gautelis.gedcom2latex.model.gedcom.FAM;
 import org.gautelis.gedcom2latex.model.gedcom.GEDC;
 import org.gautelis.gedcom2latex.model.gedcom.HEAD;
 import org.gautelis.gedcom2latex.model.gedcom.INDI;
+import org.stringtemplate.v4.STGroup;
 //import org.stringtemplate.v4.ST;
 //import org.stringtemplate.v4.STGroup;
 
@@ -22,82 +24,100 @@ public class Application {
     private final static Logger log = LogManager.getLogger(Application.class);
 
 
-    private static LineHandler loadFile(
-            final Path gedcomFile
+    private static boolean loadFile(
+            final Path gedcomFile, Map<String, Structure> index, Map</* tag/type */ String, Collection<Structure>> structures
     ) {
-        LineHandler handler = new LineHandler();
+        LineHandler handler = new LineHandler(index, structures);
         try {
             Loader loader = new Loader(handler);
             loader.load(gedcomFile.toFile());
+            return true;
         }
         catch (IOException | RuntimeException e) {
             e.printStackTrace(System.err);
         }
-        return handler;
+        return false;
     }
 
-    /*
     private static void produceOutput(
-            final Stack<Requirements> requirements,
-            final Map<String, Requirements> labeledRequirements,
+            final Map</* id */ String, Structure> index,
+            final Map</* tag */ String, Collection<Structure>> structures,
             final Collection<Path> templates,
             final PrintStream out
     ) {
+        /*
+        out.println("--- HEADER ---");
+        Optional<HEAD> head = Structure.getHEAD(structures);
+        if (head.isPresent()) {
+            Optional<GEDC> gedc = head.get().GEDC();
+            gedc.ifPresent(value -> out.println("GEDCOM version: " + value.getVersionNumber()));
+        }
+        */
+
+        out.println("--- INDIVIDUALS ---");
+        Collection<INDI> individuals = Structure.getINDIs(structures);
+        for (INDI individual : individuals) {
+            out.println(individual);
+        }
+
+        out.println("--- FAMILIES ---");
+        Collection<FAM> families = Structure.getFAMs(structures);
+        for (FAM family : families) {
+            out.println(family);
+        }
+
         STGroup group =  new STGroup();
         //group.verbose = true;
 
         for (Path template : templates) {
             String resource = "file:" + template.toAbsolutePath().toString();
-            group.loadGroupFile(/* absolute path is "relative" to root :) * / "/", resource);
+            group.loadGroupFile(/* absolute path is "relative" to root :) */ "/", resource);
         }
-
     }
-    */
 
 
-    private static void process(final Path gedcomFile, final Collection<Path> templates, final PrintStream out) {
-        LineHandler lineHandler = loadFile(gedcomFile);
 
-        Optional<HEAD> head = lineHandler.getHEAD();
-        if (head.isPresent()) {
-            Optional<GEDC> gedc = head.get().GEDC();
-            gedc.ifPresent(value -> System.out.println("GEDCOM version: " + value.getVersionNumber()));
-        }
+    private static void process(
+            final Path gedcomFile,
+            final Collection<Path> templates,
+            final File directory,
+            final PrintStream out
+    ) {
+        final Map</* id */ String, Structure> index = new HashMap<>();
+        final Map</* tag */ String, Collection<Structure>> structures = new HashMap<>();
 
-        Collection<INDI> individuals = lineHandler.getINDI();
-        for (INDI individual : individuals) {
-            System.out.println(individual);
-        }
+        if (loadFile(gedcomFile, index, structures)) {
+            Optional<HEAD> head = Structure.getHEAD(structures);
+            if (head.isPresent()) {
+                Optional<GEDC> gedc = head.get().GEDC();
+                if (gedc.isPresent()) {
+                    String version = gedc.get().getVersionNumber();
+                    out.println("Loaded GEDCOM file, version: " + version);
 
-        Map<String, Structure> structures = lineHandler.getIndex();
-        for (Structure structure : structures.values()) {
-            String tag = structure.getTag();
-            switch (tag) {
-                case "HEAD", "TRLR" -> {}
-                case "FAM" -> {}
-                case "INDI" -> {}
-                case "OBJE" -> {}
-                case "NOTE" -> {}
-                case "REPO" -> {}
-                case "SOUR" -> {}
-                case "SUBN" -> {}
-                case "SUBM" -> {}
-
-                default -> {
-                    log.info("Unknown tag: {}", tag);
+                    switch (version) {
+                        case "5.5.1" -> {
+                            out.println("Processing...");
+                        }
+                        default -> {
+                            out.println("Cannot process GEDCOM version " + version);
+                            out.flush();
+                            System.exit(1);
+                        }
+                    }
                 }
             }
 
+            //
             if (log.isTraceEnabled()) {
                 StringBuffer buf = new StringBuffer();
-                structure.deepToString(buf);
+                for (Structure structure : index.values()) {
+                    structure.deepToString(buf);
+                }
                 log.trace(buf);
             }
+
+            produceOutput(index, structures, templates, out);
         }
-
-
-
-        //produceOutput(requirements, labeledRequirements, templates, out);
     }
 
 
@@ -112,10 +132,17 @@ public class Application {
 
         Options options = new Options();
         options.addOption(Option.builder("t")
-                .required(false)  // TODO
+                .required(true)
                 .hasArgs()
                 .desc("Template used when generating output")
                 .longOpt("template")
+                .build());
+
+        options.addOption(Option.builder("d")
+                .required(false)
+                .hasArgs()
+                .desc("Directoy where output is produced")
+                .longOpt("directory")
                 .build());
 
         try {
@@ -137,8 +164,8 @@ public class Application {
                 gedcomFile = path;;
             }
 
+            //
             final Collection<Path> templates = new ArrayList<>();
-            /*
             for (String template : commandLine.getOptionValues("t")) {
                 Path path = Path.of(template);
                 File file = path.toFile();
@@ -152,12 +179,37 @@ public class Application {
                 }
                 templates.add(path);
             }
-            */
+
+            //
+            File directory = new File("latex");
+            String _directory = commandLine.getOptionValue("d");
+            if (null != _directory && !_directory.isEmpty()) {
+                directory = new File(_directory);
+            }
+
+            if (directory.exists()) {
+                if (directory.isFile()) {
+                    System.err.println("There exists a file where output was supposed to go: " + directory.getAbsolutePath());
+                    System.err.flush();
+                    System.exit(2);
+                }
+                System.out.println("WARNING: Output directory already exists: will replace output in " + directory.getAbsolutePath());
+
+            } else if (!directory.mkdir()) {
+                System.err.println("Could not create output directory: " + directory.getAbsolutePath());
+                System.err.flush();
+                System.exit(3);
+            }
+
+            if (!directory.canWrite()) {
+                System.err.println("Not allowed to write to output directory: " + directory.getAbsolutePath());
+                System.err.flush();
+                System.exit(4);
+            }
 
 
             //
-
-            process(gedcomFile, templates, System.out);
+            process(gedcomFile, templates, directory, System.out);
         }
         catch (Throwable t) {
             System.err.println(t.getMessage());

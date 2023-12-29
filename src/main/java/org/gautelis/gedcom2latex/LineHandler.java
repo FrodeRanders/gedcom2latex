@@ -3,6 +3,7 @@ package org.gautelis.gedcom2latex;
 import org.gautelis.gedcom2latex.model.Structure;
 import org.gautelis.gedcom2latex.model.gedcom.HEAD;
 import org.gautelis.gedcom2latex.model.gedcom.INDI;
+import org.gautelis.gedcom2latex.model.gedcom.FAM;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -13,34 +14,33 @@ import java.util.stream.Collectors;
 public class LineHandler {
     private static final Logger log = LoggerFactory.getLogger(LineHandler.class);
 
-    private final Map<String, Structure> index = new HashMap<>();
+    private final Map</* id */ String, Structure> index;
 
-    final Map</* tag/type */ String, Collection<Structure>> structures = new HashMap<>();
+    private final Map</* tag */ String, Collection<Structure>> structures;
 
     private final Stack<Structure> stack = new Stack<>();
 
-    public LineHandler() {
+    public LineHandler(Map<String, Structure> index, Map</* tag/type */ String, Collection<Structure>> structures) {
+        this.index = index;
+        this.structures = structures;
     }
 
     public Map<String, Structure> getIndex() {
         return index;
     }
 
-    public Optional<HEAD> getHEAD() {
-        Collection<Structure> heads = structures.get("HEAD");
-        Optional<Structure> head = heads.stream().findFirst();
-        return head.map(HEAD::new);
-    }
-
-    public Collection<INDI> getINDI() {
-        Collection<Structure> individuals = structures.get("INDI");
-        return individuals.stream().map(INDI::new).collect(Collectors.toList());
+    private String indent(long level) {
+        StringBuilder buf = new StringBuilder();
+        for (long i=0L; i < level; i++) {
+            buf.append("  ");
+        }
+        return buf.toString();
     }
 
     public void accept(long level, String pointer, String tag, String data){
 
         Structure structure = new Structure(level, pointer, tag, data);
-        log.trace("Read: {}", structure);
+        log.debug("Read: {}{}", indent(level), structure);
 
         // Keep track of all top-level structures (individuals, families, ...)
         if (level == 0L) {
@@ -85,6 +85,7 @@ public class LineHandler {
         if (null == current) {
             log.error("Stack is empty: No current structure when appending data: " + data);
         } else {
+            log.debug("Read: {}{}", indent(current.getLevel()), data);
             current.appendData(data);
         }
     }

@@ -1,20 +1,26 @@
 package org.gautelis.gedcom2latex;
 
+import org.apache.http.Header;
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.*;
-import java.net.URL;
-import java.net.URLConnection;
-import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
-import java.util.List;
 
 /**
  * Various handy file IO related functions.
  */
 public class FileIO {
+    private static final Logger log = LoggerFactory.getLogger(FileIO.class);
 
     /**
      * A nice one: http://thomaswabner.wordpress.com/2007/10/09/fast-stream-copy-using-javanio-channels/
@@ -92,6 +98,7 @@ public class FileIO {
     /**
      * Removes a file or, if a directory, a directory substructure...
      * <p>
+     *
      * @param d a file or a directory
      */
     public static boolean delete(File d) {
@@ -111,5 +118,32 @@ public class FileIO {
             }
         }
         return d.delete();
+    }
+
+    private static final String USER_AGENT = "Mozilla/5.0";
+
+    private boolean download(String url, File file) throws IOException {
+        try (CloseableHttpClient client = HttpClients.createDefault()) {
+
+            HttpGet getMethod = new HttpGet(url);
+            getMethod.addHeader("User-Agent", USER_AGENT);
+
+            HttpResponse rawResponse = client.execute(getMethod);
+            int status = rawResponse.getStatusLine().getStatusCode();
+            if (200 == status) {
+                HttpEntity entity = rawResponse.getEntity();
+                Header contentType = entity.getContentType();
+                log.debug("Download {} from {} [{}]", file.getName(), url, contentType.getValue());
+
+                writeToFile(entity.getContent(), file);
+                return true;
+
+            } else {
+                log.warn("Failed to retrieve data from {}: [{}] {}",
+                        url, status, rawResponse.getStatusLine().getReasonPhrase());
+            }
+
+            return false;
+        }
     }
 }

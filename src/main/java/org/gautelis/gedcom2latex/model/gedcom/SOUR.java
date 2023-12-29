@@ -18,7 +18,7 @@ package org.gautelis.gedcom2latex.model.gedcom;
  */
 public class SOUR implements Record {
     public String toString() {
-        StringBuffer buf = new StringBuffer("[SOUR ...");
+        StringBuffer buf = new StringBuffer("[SOUR (source) ...");
         buf.append("]");
         return buf.toString();
     }
