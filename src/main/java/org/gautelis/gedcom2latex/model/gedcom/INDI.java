@@ -149,6 +149,10 @@ public class INDI implements Record {
         _spouseToFamilyLinks.stream().map(FAMS::new).forEach(spouseToFamilyLinks::add);
     }
 
+    public String getId() {
+        return id;
+    }
+
     public Collection<NAME> NAME() {
         return names;
     }

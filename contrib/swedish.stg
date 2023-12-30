@@ -1,0 +1,176 @@
+group gedcom2latex;
+
+delimiters "$", "$"
+
+preamble(date) ::= <<
+%% -------------------------------------------------------
+%%  This file was automatically generated at $date$.
+%%  Manual modifications to this file will be lost!
+%% -------------------------------------------------------
+\documentclass{book}
+\usepackage[all]{genealogytree}
+%\usepackage{tikz}
+\usepackage{makeidx}
+
+\usepackage{longtable}
+\usepackage{lscape}
+\usepackage{nameref}
+\usepackage{url}
+\usepackage{tabularx}
+%\usepackage[table]{xcolor}
+\usepackage{placeins}
+\usepackage{multirow}
+
+%\usepackage{textcomp}
+%\usepackage[]{inputenc}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[swedish]{babel}
+\usepackage[swedish]{varioref}
+
+\usepackage[useregional]{datetime2}
+%%\renewcommand{\dateseparator}{-}
+
+%% \r{a} \"{a}  \"{o}
+\usepackage[framemethod=TikZ]{mdframed}
+\usepackage[figuresright]{rotating}  % PDF version
+%\usepackage{rotating} % Printing version
+
+%-------------------------------------------------------------------
+% Inscribed character
+%-------------------------------------------------------------------
+\newcommand*\circled[1]{\tikz[baseline=(char.base)]{
+	\node[shape=circle,draw,inner sep=1pt] (char) {\fontencoding{T1}\fontfamily{phv}\fontsize{7}{10}\selectfont #1};}}
+
+%-------------------------------------------------------------------
+% Horizontal figure
+%-------------------------------------------------------------------
+\newenvironment{lyingfigure}
+{
+    \begin{sidewaysfigure}[!htbp]
+}
+{
+    \end{sidewaysfigure}
+}
+
+%-------------------------------------------------------------------
+% Notabene box
+%-------------------------------------------------------------------
+\newenvironment{notabene}[1][]
+{
+    \ifstrempty{#1}%
+    {\mdfsetup{%
+    frametitle={%
+    \tikz[baseline=(current bounding box.east),outer sep=0pt]
+    \node[anchor=east,rectangle,fill=red!20]
+    {\strut Notera};}}
+    }%
+    {\mdfsetup{%
+    frametitle={%
+    \tikz[baseline=(current bounding box.east),outer sep=0pt]
+    \node[anchor=east,rectangle,fill=red!20]
+    {\strut Notera:~#1};}}%
+    }%
+    \mdfsetup{innertopmargin=10pt,linecolor=red!20,%
+    linewidth=2pt,topline=true,%
+    frametitleaboveskip=\dimexpr-\ht\strutbox\relax
+    }
+    \begin{mdframed}[]\relax%
+}
+{
+    \end{mdframed}
+}
+
+%-------------------------------------------------------------------
+
+\date{\today}
+\title{Genealogisk översikt}
+%\subtitle{Familieträd}
+%\editors{Frode Randers}
+\author{Frode Randers}
+
+\makeindex
+
+\begin{document}
+
+%\rhead{}
+\maketitle
+
+\vfill
+
+\newpage
+\renewcommand\contentsname{Inneh{\aa}llsf{\"o}rteckning}
+\tableofcontents
+\newpage
+
+>>
+
+postamble() ::= <<
+\printindex
+\end{document}
+
+>>
+
+chapter(title) ::= <<
+\chapter{$title$}
+
+>>
+
+//
+as_date(datum) ::= "date(\"$datum$\")"
+
+
+//
+parent_child_benefit_days(parentid,childid,kod,days) ::= <<
+MATCH (p:Person),(c:Person),(f:Förmån)
+WHERE p.id = "$parentid$" AND c.pid = "$childid$" AND f.typ = "$kod$"
+CREATE (b:Beslut {dagar: [$days:{ d | $d:as_date()$ }; separator=", "$]})
+CREATE (p)-[:UPPBÄR]->(f)
+CREATE (b)-[:AVSER]->(f)
+CREATE (b)-[:GÄLLER]->(c);
+
+>>
+
+
+genealogypicture(graph) ::= <<
+   \begin{genealogypicture}[
+     processing=database,
+     database format=medium marriage below,
+     node size=2.4cm,
+     level size=3.5cm,
+     level distance=6mm,
+     list separators hang,
+     name font=\bfseries,
+     surn code={\textcolor{red!50!black}{#1}},
+     place text={\newline}{},
+     date format=yyyy-mon-d,
+     tcbset={male/.style={colframe=blue,colback=blue!5},
+             female/.style={colframe=red,colback=red!5}},
+     box={fit basedim=7pt,boxsep=2pt,segmentation style=solid,
+halign=flush left,before upper=\parskip1pt, \gtrDBsex,drop fuzzy shadow,
+if image defined={add to width=25mm,right=25mm,
+         underlay={\begin{tcbclipinterior}\path[fill overzoom DBimage]
+           ([xshift=-24mm]interior.south east) rectangle (interior.north east);
+         \end{tcbclipinterior}},
+       }{},
+     },
+     edges=rounded,
+     symbols record reset,
+     after tree={\node[font=\scriptsize\itshape,text width=1.8cm,below left,
+           fill=white,fill opacity=0.4,text opacity=1]
+      at (current bounding box.north east) {\gtrSymbolsLegend};},
+   ]
+     input{$graph$}
+   \end{genealogypicture}
+
+>>
+
+INDIvidual(id, name) ::= <<
+\addcontentsline{toc}{section}{$name$}\index{$name$}
+\section*{$name$}
+
+Här beskrivs personen $name$ ($id$).
+
+\vspace{.5cm}
+
+>>

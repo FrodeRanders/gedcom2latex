@@ -1,5 +1,6 @@
 package org.gautelis.gedcom2latex;
 
+import org.apache.commons.io.output.FileWriterWithEncoding;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.commons.cli.CommandLine;
@@ -8,16 +9,17 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
 import org.gautelis.gedcom2latex.model.Structure;
-import org.gautelis.gedcom2latex.model.gedcom.FAM;
-import org.gautelis.gedcom2latex.model.gedcom.GEDC;
-import org.gautelis.gedcom2latex.model.gedcom.HEAD;
-import org.gautelis.gedcom2latex.model.gedcom.INDI;
+import org.gautelis.gedcom2latex.model.gedcom.*;
+import org.stringtemplate.v4.ST;
 import org.stringtemplate.v4.STGroup;
 //import org.stringtemplate.v4.ST;
 //import org.stringtemplate.v4.STGroup;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 public class Application {
@@ -43,8 +45,17 @@ public class Application {
             final Map</* id */ String, Structure> index,
             final Map</* tag */ String, Collection<Structure>> structures,
             final Collection<Path> templates,
+            final Path directory,
             final PrintStream out
     ) {
+        STGroup group =  new STGroup();
+        //group.verbose = true;
+
+        for (Path template : templates) {
+            String resource = "file:" + template.toAbsolutePath().toString();
+            group.loadGroupFile(/* absolute path is "relative" to root :) */ "/", resource);
+        }
+
         /*
         out.println("--- HEADER ---");
         Optional<HEAD> head = Structure.getHEAD(structures);
@@ -55,23 +66,72 @@ public class Application {
         */
 
         out.println("--- INDIVIDUALS ---");
-        Collection<INDI> individuals = Structure.getINDIs(structures);
-        for (INDI individual : individuals) {
+        for (INDI individual : Structure.getINDIs(structures)) {
             out.println(individual);
         }
 
         out.println("--- FAMILIES ---");
-        Collection<FAM> families = Structure.getFAMs(structures);
-        for (FAM family : families) {
+        for (FAM family : Structure.getFAMs(structures)) {
             out.println(family);
         }
 
-        STGroup group =  new STGroup();
-        //group.verbose = true;
+        Path latexFile = directory.resolve("output.tex");
+        try (FileWriterWithEncoding s = FileWriterWithEncoding.builder()
+                .setPath(latexFile)
+                .setAppend(false)
+                .setCharsetEncoder(StandardCharsets.UTF_8.newEncoder())
+                .get()) {
 
-        for (Path template : templates) {
-            String resource = "file:" + template.toAbsolutePath().toString();
-            group.loadGroupFile(/* absolute path is "relative" to root :) */ "/", resource);
+            // preamble(date)
+            {
+                ST preamble = group.getInstanceOf("preamble");
+                LocalDate date = LocalDate.now();
+                preamble.add("date", date.format(DateTimeFormatter.ISO_LOCAL_DATE));
+                s.append(preamble.render());
+            }
+
+            // chapter(title)
+            {
+                ST preamble = group.getInstanceOf("chapter");
+                preamble.add("title", "Individer");
+                s.append(preamble.render());
+            }
+
+            // INDIvidual(name)
+            {
+                Collection<INDI> individuals = Structure.getINDIs(structures);
+                for (INDI individual : individuals) {
+                    Optional<NAME> name = individual.NAME().stream().findFirst();
+
+                    ST preamble = group.getInstanceOf("INDIvidual");
+                    preamble.add("id", individual.getId());
+                    if (name.isPresent()) {
+                        preamble.add("name", name.get().getName());
+                    } else {
+                        preamble.add("name", individual.getId());
+                    }
+                    s.append(preamble.render());
+                }
+            }
+
+            // chapter(title)
+            {
+                ST preamble = group.getInstanceOf("chapter");
+                preamble.add("title", "Familier");
+                s.append(preamble.render());
+            }
+
+
+            // postamble(date)
+            {
+                ST postamble = group.getInstanceOf("postamble");
+                s.append(postamble.render());
+            }
+        } catch (IOException ioe) {
+            String info = "Failed to produce output: " + ioe.getMessage();
+            log.error(info, ioe);
+            out.println(info);
+            out.flush();
         }
     }
 
@@ -80,7 +140,7 @@ public class Application {
     private static void process(
             final Path gedcomFile,
             final Collection<Path> templates,
-            final File directory,
+            final Path directory,
             final PrintStream out
     ) {
         final Map</* id */ String, Structure> index = new HashMap<>();
@@ -116,7 +176,7 @@ public class Application {
                 log.trace(buf);
             }
 
-            produceOutput(index, structures, templates, out);
+            produceOutput(index, structures, templates, directory, out);
         }
     }
 
@@ -207,9 +267,8 @@ public class Application {
                 System.exit(4);
             }
 
-
             //
-            process(gedcomFile, templates, directory, System.out);
+            process(gedcomFile, templates, directory.toPath(), System.out);
         }
         catch (Throwable t) {
             System.err.println(t.getMessage());
