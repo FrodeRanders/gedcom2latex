@@ -165,7 +165,7 @@ if image defined={add to width=25mm,right=25mm,
 
 >>
 
-INDIvidual(id, name) ::= <<
+individual(id, name) ::= <<
 \addcontentsline{toc}{section}{$name$}\index{$name$}
 \section*{$name$}
 

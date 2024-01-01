@@ -97,13 +97,13 @@ public class Application {
                 s.append(preamble.render());
             }
 
-            // INDIvidual(name)
+            // INDIvidual(id,name)
             {
                 Collection<INDI> individuals = Structure.getINDIs(structures);
                 for (INDI individual : individuals) {
                     Optional<NAME> name = individual.NAME().stream().findFirst();
 
-                    ST preamble = group.getInstanceOf("INDIvidual");
+                    ST preamble = group.getInstanceOf("individual");
                     preamble.add("id", individual.getId());
                     if (name.isPresent()) {
                         preamble.add("name", name.get().getName());
@@ -120,7 +120,6 @@ public class Application {
                 preamble.add("title", "Familier");
                 s.append(preamble.render());
             }
-
 
             // postamble(date)
             {
