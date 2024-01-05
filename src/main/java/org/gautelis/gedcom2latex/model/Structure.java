@@ -151,7 +151,7 @@ public class Structure {
         buf.append(level);
 
         if (null != pointer && !pointer.isEmpty()) {
-            buf.append(" @").append(pointer).append("@");
+            buf.append(" ").append(pointer);
         }
 
         buf.append(" ").append(tag);

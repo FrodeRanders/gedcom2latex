@@ -73,10 +73,7 @@ import java.util.Optional;
 public class FAM implements Record {
 
     private final String id;
-    private final Collection<NAME> names = new ArrayList<>();
-
     private final String husbandId;
-
     private final String wifeId;
     private final Collection<String> childrenId = new ArrayList<>();
 
@@ -84,21 +81,34 @@ public class FAM implements Record {
         Optional<String> _id = structure.getID();
         id = _id.orElse("<unknown>");
 
-        husbandId = structure.getNestedData("HUSB", "<unknown>");
-        wifeId = structure.getNestedData("WIFE", "<unknown>");
+        husbandId = structure.getNestedData("HUSB", null);
+        wifeId = structure.getNestedData("WIFE", null);
 
         Collection<Structure> _children = structure.getNestedStructures("CHIL");
         for (Structure _child : _children) {
-            childrenId.add(_child.getData("<unknown>"));
+            Optional<String> childId = _child.getData();
+            childId.ifPresent(childrenId::add);
         }
     }
 
-    public Collection<NAME> NAME() {
-        return names;
+    public String getId() {
+        return id;
+    }
+
+    public Optional<String> getHusbandId() {
+        return Optional.ofNullable(husbandId);
+    }
+
+    public Optional<String> getWifeId() {
+        return Optional.ofNullable(wifeId);
+    }
+
+    public Collection<String> getChildrenId() {
+        return childrenId;
     }
 
     public String toString() {
-        StringBuffer buf = new StringBuffer("[FAM (family)");
+        StringBuilder buf = new StringBuilder("[FAM (family)");
         buf.append(" id=").append(null != id ? id : "");
         buf.append(" husband=").append(husbandId);
         buf.append(" wife=").append(wifeId);

@@ -8,6 +8,7 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
+import org.gautelis.gedcom2latex.model.Individual;
 import org.gautelis.gedcom2latex.model.Structure;
 import org.gautelis.gedcom2latex.model.gedcom.*;
 import org.stringtemplate.v4.ST;
@@ -21,6 +22,7 @@ import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class Application {
     private final static Logger log = LogManager.getLogger(Application.class);
@@ -41,20 +43,64 @@ public class Application {
         return false;
     }
 
-    private static void produceOutput(
+    public static Set<Individual> depthFirstTraversal(Individual root) {
+        Set<Individual> visited = new LinkedHashSet<>();
+        Stack<Individual> stack = new Stack<>();
+        stack.push(root);
+        while (!stack.isEmpty()) {
+            Individual vertex = stack.pop();
+            if (!visited.contains(vertex)) {
+                visited.add(vertex);
+
+                Optional<Individual> father = vertex.getFather();
+                father.ifPresent(stack::push);
+                Optional<Individual> mother = vertex.getMother();
+                mother.ifPresent(stack::push);
+
+                // we don't follow children links here
+            }
+        }
+        return visited;
+    }
+
+    public static Set<Individual> breadthFirstTraversal(Individual individual) {
+        Set<Individual> visited = new LinkedHashSet<>();
+        Queue<Individual> queue = new LinkedList<>();
+        queue.add(individual);
+        visited.add(individual);
+        while (!queue.isEmpty()) {
+            Individual vertex = queue.poll();
+
+            Optional<Individual> father = vertex.getFather();
+            if (father.isPresent()) {
+                Individual _father = father.get();
+                if (!visited.contains(_father)) {
+                    visited.add(_father);
+                    queue.add(_father);
+                }
+            }
+
+            Optional<Individual> mother = vertex.getMother();
+            if (mother.isPresent()) {
+                Individual _mother = mother.get();
+                if (!visited.contains(_mother)) {
+                    visited.add(_mother);
+                    queue.add(_mother);
+                }
+            }
+        }
+        return visited;
+    }
+
+
+    private static Map</* id */ String, Individual> analyze(
             final Map</* id */ String, Structure> index,
             final Map</* tag */ String, Collection<Structure>> structures,
-            final Collection<Path> templates,
-            final Path directory,
             final PrintStream out
     ) {
-        STGroup group =  new STGroup();
-        //group.verbose = true;
-
-        for (Path template : templates) {
-            String resource = "file:" + template.toAbsolutePath().toString();
-            group.loadGroupFile(/* absolute path is "relative" to root :) */ "/", resource);
-        }
+        Map</* id */ String, Individual> individuals = Structure.getINDIs(structures)
+                .stream()
+                .collect(Collectors.toMap(INDI::getId, Individual::new, (a, b) -> b));
 
         /*
         out.println("--- HEADER ---");
@@ -65,14 +111,89 @@ public class Application {
         }
         */
 
-        out.println("--- INDIVIDUALS ---");
-        for (INDI individual : Structure.getINDIs(structures)) {
-            out.println(individual);
-        }
-
         out.println("--- FAMILIES ---");
         for (FAM family : Structure.getFAMs(structures)) {
             out.println(family);
+            String familyId = family.getId();
+
+            Individual father = null;
+            Optional<String> husbandId = family.getHusbandId();
+            if (husbandId.isPresent()) {
+                father = individuals.get(husbandId.get());
+                assert null != father;
+            }
+
+            Individual mother = null;
+            Optional<String> wifeId = family.getWifeId();
+            if (wifeId.isPresent()) {
+                mother = individuals.get(wifeId.get());
+                assert null != mother;
+            }
+
+            for (String childId : family.getChildrenId()) {
+                out.println("Looking up child with id=" + childId);
+                Individual child = individuals.get(childId);
+                if (null != child) {
+                    if (null != father) {
+                        child.setFather(familyId, father);
+                    }
+                    if (null != mother) {
+                        child.setMother(familyId, mother);
+                    }
+                }
+            }
+        }
+
+        out.println("--- INDIVIDUALS ---");
+        for (Individual individual : individuals.values()) {
+            out.println(individual);
+        }
+
+        out.println("-------------------");
+        Individual me = individuals.get("@I500003@"); // for now :)
+
+        Set<Individual> myFamily = breadthFirstTraversal(me);
+        for (Individual individual : myFamily) {
+            Collection<String> names = individual.getNames();
+            for (String name : names) {
+                out.print(name);
+
+                Collection<Individual> spouses = individual.getSpouses();
+                if (!spouses.isEmpty()) {
+                    out.println();
+
+                    for (Individual spouse : spouses) {
+                        out.print("   +> ");
+                        Collection<String> spouseNames = spouse.getNames();
+                        for (String spouseName : spouseNames) {
+                            out.print("\"" + spouseName + "\" ");
+                        }
+                        out.println();
+                    }
+                }
+                out.println();
+            }
+        }
+        out.println("-------------------");
+
+
+        return individuals;
+   }
+
+    private static void produceOutput(
+            final Map</* id */ String, Structure> index,
+            final Map</* tag */ String, Collection<Structure>> structures,
+            final Map</* id */ String, Individual> individuals,
+            final Collection<Path> templates,
+            final Path directory,
+            final PrintStream out
+    ) {
+        STGroup group =  new STGroup();
+        //group.verbose = true;
+
+        for (Path template : templates) {
+            String resource = "file:" + template.toAbsolutePath().toString();
+            group.loadGroupFile(/* absolute path is "relative" to root :) */ "/", resource);
         }
 
         Path latexFile = directory.resolve("output.tex");
@@ -97,16 +218,15 @@ public class Application {
                 s.append(preamble.render());
             }
 
-            // INDIvidual(id,name)
+            // individual(id,name)
             {
-                Collection<INDI> individuals = Structure.getINDIs(structures);
-                for (INDI individual : individuals) {
-                    Optional<NAME> name = individual.NAME().stream().findFirst();
+                for (Individual individual : individuals.values()) {
+                    Optional<String> name = individual.getNames().stream().findFirst();
 
                     ST preamble = group.getInstanceOf("individual");
                     preamble.add("id", individual.getId());
                     if (name.isPresent()) {
-                        preamble.add("name", name.get().getName());
+                        preamble.add("name", name.get());
                     } else {
                         preamble.add("name", individual.getId());
                     }
@@ -175,7 +295,8 @@ public class Application {
                 log.trace(buf);
             }
 
-            produceOutput(index, structures, templates, directory, out);
+            Map</* id */ String, Individual> individuals = analyze(index, structures, out);
+            produceOutput(index, structures, individuals, templates, directory, out);
         }
     }
 
