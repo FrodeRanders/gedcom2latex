@@ -205,32 +205,48 @@ public class Application {
 
             // preamble(date)
             {
-                ST preamble = group.getInstanceOf("preamble");
+                ST template = group.getInstanceOf("preamble");
                 LocalDate date = LocalDate.now();
-                preamble.add("date", date.format(DateTimeFormatter.ISO_LOCAL_DATE));
-                s.append(preamble.render());
+                template.add("date", date.format(DateTimeFormatter.ISO_LOCAL_DATE));
+                s.append(template.render());
             }
 
             // chapter(title)
             {
-                ST preamble = group.getInstanceOf("chapter");
-                preamble.add("title", "Individer");
-                s.append(preamble.render());
+                ST template = group.getInstanceOf("chapter");
+                template.add("title", "Individer");
+                s.append(template.render());
             }
 
-            // individual(id,name)
             {
+                // genealogygraph_horiz(graph)
+                {
+                    ST template = group.getInstanceOf("genealogygraph_horizontal");
+                    template.add("graph", Individual.produceLatexOutput());
+                    s.append(template.render());
+                }
+
                 for (Individual individual : individuals.values()) {
                     Optional<String> name = individual.getNames().stream().findFirst();
 
-                    ST preamble = group.getInstanceOf("individual");
-                    preamble.add("id", individual.getId());
-                    if (name.isPresent()) {
-                        preamble.add("name", name.get());
-                    } else {
-                        preamble.add("name", individual.getId());
+                    // individual(id,name)
+                    {
+                        ST template = group.getInstanceOf("individual");
+                        template.add("id", individual.getId());
+                        if (name.isPresent()) {
+                            template.add("name", name.get());
+                        } else {
+                            template.add("name", individual.getId());
+                        }
+                        s.append(template.render());
                     }
-                    s.append(preamble.render());
+
+                    // genealogygraph_horiz(graph)
+                    {
+                        ST template = group.getInstanceOf("genealogygraph_horizontal");
+                        template.add("graph", individual.asCoreRelationship());
+                        s.append(template.render());
+                    }
                 }
             }
 

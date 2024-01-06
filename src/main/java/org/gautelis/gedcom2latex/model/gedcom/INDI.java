@@ -153,6 +153,10 @@ public class INDI implements Record {
         return id;
     }
 
+    public SEX getSex() {
+        return sex;
+    }
+
     public Collection<NAME> NAME() {
         return names;
     }

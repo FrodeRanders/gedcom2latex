@@ -131,13 +131,24 @@ CREATE (b)-[:GÄLLER]->(c);
 
 >>
 
+genealogygraph_horizontal(graph) ::= <<
+\begin{tikzpicture} \genealogytree[
+    timeflow=left,
+    processing=tcolorbox,
+    level size=5.5cm,node size from=5mm to 6cm,
+    box={size=small,halign=center,valign=center,fontupper=\small\sffamily},
+]
+  $graph$
+\end{tikzpicture}
 
-genealogypicture(graph) ::= <<
+>>
+
+genealogygraph_vertical(graph) ::= <<
    \begin{genealogypicture}[
      processing=database,
      database format=medium marriage below,
-     node size=2.4cm,
-     level size=3.5cm,
+     node size=5.4cm,
+     level size=5.5cm,
      level distance=6mm,
      list separators hang,
      name font=\bfseries,
@@ -160,7 +171,7 @@ if image defined={add to width=25mm,right=25mm,
            fill=white,fill opacity=0.4,text opacity=1]
       at (current bounding box.north east) {\gtrSymbolsLegend};},
    ]
-     input{$graph$}
+     $graph$
    \end{genealogypicture}
 
 >>
