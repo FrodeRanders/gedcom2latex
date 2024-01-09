@@ -23,6 +23,7 @@ preamble(date) ::= <<
 
 %\usepackage{textcomp}
 %\usepackage[]{inputenc}
+\usepackage{marvosym}
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
 \usepackage[swedish]{babel}
@@ -116,72 +117,94 @@ chapter(title) ::= <<
 
 >>
 
-//
-as_date(datum) ::= "date(\"$datum$\")"
-
-
-//
-parent_child_benefit_days(parentid,childid,kod,days) ::= <<
-MATCH (p:Person),(c:Person),(f:Förmån)
-WHERE p.id = "$parentid$" AND c.pid = "$childid$" AND f.typ = "$kod$"
-CREATE (b:Beslut {dagar: [$days:{ d | $d:as_date()$ }; separator=", "$]})
-CREATE (p)-[:UPPBÄR]->(f)
-CREATE (b)-[:AVSER]->(f)
-CREATE (b)-[:GÄLLER]->(c);
-
->>
-
 genealogygraph_horizontal(graph) ::= <<
+\vspace{.5cm}
 \begin{tikzpicture} \genealogytree[
     timeflow=left,
     processing=tcolorbox,
-    level size=5.5cm,node size from=5mm to 6cm,
+    level size=6.5cm,
+    node size from=5mm to 2cm,
     box={size=small,halign=center,valign=center,fontupper=\small\sffamily},
 ]
-  $graph$
+$graph$
 \end{tikzpicture}
 
 >>
 
 genealogygraph_vertical(graph) ::= <<
-   \begin{genealogypicture}[
-     processing=database,
-     database format=medium marriage below,
-     node size=5.4cm,
-     level size=5.5cm,
-     level distance=6mm,
-     list separators hang,
-     name font=\bfseries,
-     surn code={\textcolor{red!50!black}{#1}},
-     place text={\newline}{},
-     date format=yyyy-mon-d,
-     tcbset={male/.style={colframe=blue,colback=blue!5},
-             female/.style={colframe=red,colback=red!5}},
-     box={fit basedim=7pt,boxsep=2pt,segmentation style=solid,
-halign=flush left,before upper=\parskip1pt, \gtrDBsex,drop fuzzy shadow,
-if image defined={add to width=25mm,right=25mm,
-         underlay={\begin{tcbclipinterior}\path[fill overzoom DBimage]
+\begin{genealogypicture}[
+    processing=database,
+    database format=medium marriage below,
+    node size=5.4cm,
+    level size=5.5cm,
+    level distance=6mm,
+    list separators hang,
+    name font=\bfseries,
+    surn code={\textcolor{red!50!black}{#1}},
+    place text={\newline}{},
+    date format=yyyy-mon-d,
+    tcbset={male/.style={colframe=blue,colback=blue!5},
+            female/.style={colframe=red,colback=red!5}},
+    box={fit basedim=7pt,boxsep=2pt,segmentation style=solid,
+        halign=flush left,before upper=\parskip1pt, \gtrDBsex,drop fuzzy shadow,
+        if image defined={add to width=25mm,right=25mm,
+        underlay={\begin{tcbclipinterior}\path[fill overzoom DBimage]
            ([xshift=-24mm]interior.south east) rectangle (interior.north east);
-         \end{tcbclipinterior}},
-       }{},
-     },
-     edges=rounded,
-     symbols record reset,
-     after tree={\node[font=\scriptsize\itshape,text width=1.8cm,below left,
-           fill=white,fill opacity=0.4,text opacity=1]
-      at (current bounding box.north east) {\gtrSymbolsLegend};},
-   ]
-     $graph$
-   \end{genealogypicture}
+    \end{tcbclipinterior}},
+    }{},
+    },
+    edges=rounded,
+    symbols record reset,
+    after tree={\node[font=\scriptsize\itshape,text width=1.8cm,below left,
+        fill=white,fill opacity=0.4,text opacity=1]
+    at (current bounding box.north east) {\gtrSymbolsLegend};},
+]
+$graph$
+\end{genealogypicture}
 
 >>
 
-individual(id, name) ::= <<
+individual(id, name, sex) ::= <<
+
+% Individual $id$
 \addcontentsline{toc}{section}{$name$}\index{$name$}
-\section*{$name$}
+\section*{$name$ \\$sex$}\label{sec:$id$}
 
-Här beskrivs personen $name$ ($id$).
+>>
 
-\vspace{.5cm}
+additionalName(name) ::= <<
+\paragraph{
+Annat namn $name$
+}
+
+>>
+
+born(date, place) ::= <<
+\paragraph{
+}
+
+>>
+
+baptism(date, place) ::= <<
+\paragraph{
+}
+
+>>
+
+married(date, place) ::= <<
+\paragraph{
+}
+
+>>
+
+death(date, place) ::= <<
+\paragraph{
+}
+
+>>
+
+burial(date, place) ::= <<
+\paragraph{
+}
 
 >>

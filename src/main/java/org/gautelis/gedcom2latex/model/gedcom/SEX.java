@@ -5,9 +5,9 @@ import java.util.Map;
 
 // A code that indicates the sex of the individual
 public enum SEX {
-    male("M"),
-    female("F"),
-    undetermined("U");
+    Male("M"),
+    Female("F"),
+    Neutral("N");
 
     private final String code;
 
@@ -25,7 +25,7 @@ public enum SEX {
     public static SEX from(String code) {
         SEX sex = index.get(code.toUpperCase());
         if (null == sex) {
-            return undetermined;
+            return Neutral;
         }
         return sex;
     }

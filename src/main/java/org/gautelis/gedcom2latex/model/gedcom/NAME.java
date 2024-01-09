@@ -1,5 +1,6 @@
 package org.gautelis.gedcom2latex.model.gedcom;
 
+import org.gautelis.gedcom2latex.model.Record;
 import org.gautelis.gedcom2latex.model.Structure;
 
 import java.util.Optional;
@@ -30,7 +31,6 @@ import java.util.Optional;
 public class NAME implements Record {
 
     private final String name;
-
     private final String givenName;
     private final String surname;
 

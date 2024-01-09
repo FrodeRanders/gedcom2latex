@@ -8,7 +8,9 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
+import org.gautelis.gedcom2latex.model.DatePlace;
 import org.gautelis.gedcom2latex.model.Individual;
+import org.gautelis.gedcom2latex.model.Name;
 import org.gautelis.gedcom2latex.model.Structure;
 import org.gautelis.gedcom2latex.model.gedcom.*;
 import org.stringtemplate.v4.ST;
@@ -154,9 +156,9 @@ public class Application {
 
         Set<Individual> myFamily = breadthFirstTraversal(me);
         for (Individual individual : myFamily) {
-            Collection<String> names = individual.getNames();
-            for (String name : names) {
-                out.print(name);
+            Collection<Name> names = individual.getNames();
+            for (Name name : names) {
+                out.print(name.annotatedName());
 
                 Collection<Individual> spouses = individual.getSpouses();
                 if (!spouses.isEmpty()) {
@@ -164,9 +166,9 @@ public class Application {
 
                     for (Individual spouse : spouses) {
                         out.print("   +> ");
-                        Collection<String> spouseNames = spouse.getNames();
-                        for (String spouseName : spouseNames) {
-                            out.print("\"" + spouseName + "\" ");
+                        Collection<Name> spouseNames = spouse.getNames();
+                        for (Name spouseName : spouseNames) {
+                            out.print("\"" + spouseName.annotatedName() + "\" ");
                         }
                         out.println();
                     }
@@ -219,25 +221,30 @@ public class Application {
             }
 
             {
+                /*
                 // genealogygraph_horiz(graph)
                 {
                     ST template = group.getInstanceOf("genealogygraph_horizontal");
                     template.add("graph", Individual.produceLatexOutput());
                     s.append(template.render());
                 }
+                */
 
                 for (Individual individual : individuals.values()) {
-                    Optional<String> name = individual.getNames().stream().findFirst();
+                    Collection<Name> names = individual.getNames();
+                    Iterator<Name> niter = names.iterator();
 
                     // individual(id,name)
                     {
                         ST template = group.getInstanceOf("individual");
                         template.add("id", individual.getId());
-                        if (name.isPresent()) {
-                            template.add("name", name.get());
+                        if (niter.hasNext()) {
+                            Name name = niter.next();
+                            template.add("name", name.annotatedName().replace("/", ""));
                         } else {
                             template.add("name", individual.getId());
                         }
+                        template.add("sex", individual.getSex().name());
                         s.append(template.render());
                     }
 
@@ -245,6 +252,47 @@ public class Application {
                     {
                         ST template = group.getInstanceOf("genealogygraph_horizontal");
                         template.add("graph", individual.asCoreRelationship());
+                        s.append(template.render());
+                    }
+
+                    while (niter.hasNext()) {
+                        Name name = niter.next();
+
+                        // additionalName(name)
+                        ST template = group.getInstanceOf("additionalName");
+                        template.add("name", name);
+                        s.append(template.render());
+                    }
+
+                    // born(date, place)
+                    for (DatePlace birth : individual.getBirths()) {
+                        ST template = group.getInstanceOf("born");
+                        template.add("date", birth.date());
+                        template.add("place", birth.place());
+                        s.append(template.render());
+                    }
+
+                    // baptism(date, place)
+                    for (DatePlace baptism : individual.getBaptisms()) {
+                        ST template = group.getInstanceOf("baptism");
+                        template.add("date", baptism.date());
+                        template.add("place", baptism.place());
+                        s.append(template.render());
+                    }
+
+                    // death(date, place)
+                    for (DatePlace death : individual.getDeaths()) {
+                        ST template = group.getInstanceOf("death");
+                        template.add("date", death.date());
+                        template.add("place", death.place());
+                        s.append(template.render());
+                    }
+
+                    // burial(date, place)
+                    for (DatePlace burial : individual.getBurials()) {
+                        ST template = group.getInstanceOf("burial");
+                        template.add("date", burial.date());
+                        template.add("place", burial.place());
                         s.append(template.render());
                     }
                 }

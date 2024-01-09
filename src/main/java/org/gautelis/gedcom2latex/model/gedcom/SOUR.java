@@ -1,5 +1,7 @@
 package org.gautelis.gedcom2latex.model.gedcom;
 
+import org.gautelis.gedcom2latex.model.Record;
+
 /**
  * A GEDCOM SOUR record.
  * <p/>

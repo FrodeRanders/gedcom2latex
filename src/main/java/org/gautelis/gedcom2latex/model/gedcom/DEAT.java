@@ -1,5 +1,6 @@
 package org.gautelis.gedcom2latex.model.gedcom;
 
+import org.gautelis.gedcom2latex.model.Record;
 import org.gautelis.gedcom2latex.model.Structure;
 
 import java.util.Optional;
@@ -41,8 +42,8 @@ public class DEAT implements Record {
 
 
     public DEAT(Structure structure) {
-        date = structure.getNestedData("DATE", "<unknown>");
-        place = structure.getNestedData("PLAC", "<unknown>");
+        date = structure.getNestedData("DATE", "");
+        place = structure.getNestedData("PLAC", "");
      }
 
     public Optional<String> getDate() {

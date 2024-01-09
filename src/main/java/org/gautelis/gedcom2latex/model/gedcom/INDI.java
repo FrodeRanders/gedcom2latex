@@ -1,5 +1,6 @@
 package org.gautelis.gedcom2latex.model.gedcom;
 
+import org.gautelis.gedcom2latex.model.Record;
 import org.gautelis.gedcom2latex.model.Structure;
 
 import java.util.*;
@@ -113,7 +114,7 @@ public class INDI implements Record {
     private final Collection<NAME> names = new ArrayList<>();
     private final SEX sex;
     private final Collection<BIRT> births = new ArrayList<>();
-    private final Collection<CHR> christeneds = new ArrayList<>();
+    private final Collection<CHR> baptisms = new ArrayList<>();
     private final Collection<DEAT> deaths = new ArrayList<>();
     private final Collection<BURI> burials = new ArrayList<>();
     private final Collection<FAMC> childToFamilyLinks = new ArrayList<>(); // Child to family links
@@ -130,8 +131,8 @@ public class INDI implements Record {
         Collection<Structure> _births = structure.getNestedStructures("BIRT");
         _births.stream().map(BIRT::new).forEach(births::add);
 
-        Collection<Structure> _christeneds = structure.getNestedStructures("CHR");
-        _christeneds.stream().map(CHR::new).forEach(christeneds::add);
+        Collection<Structure> _baptisms = structure.getNestedStructures("CHR");
+        _baptisms.stream().map(CHR::new).forEach(baptisms::add);
 
         Collection<Structure> _deaths = structure.getNestedStructures("DEAT");
         _deaths.stream().map(DEAT::new).forEach(deaths::add);
@@ -166,7 +167,7 @@ public class INDI implements Record {
     }
 
     public Collection<CHR> CHR() {
-        return christeneds;
+        return baptisms;
     }
 
     public Collection<DEAT> DEAT() {

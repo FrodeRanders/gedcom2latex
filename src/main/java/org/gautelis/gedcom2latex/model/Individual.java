@@ -1,12 +1,8 @@
 package org.gautelis.gedcom2latex.model;
 
-import org.gautelis.gedcom2latex.model.gedcom.FAMC;
-import org.gautelis.gedcom2latex.model.gedcom.INDI;
-import org.gautelis.gedcom2latex.model.gedcom.NAME;
-import org.gautelis.gedcom2latex.model.gedcom.SEX;
+import org.gautelis.gedcom2latex.model.gedcom.*;
 
 import java.util.*;
-import java.util.stream.Stream;
 
 public class Individual {
     private final INDI self;
@@ -28,10 +24,14 @@ public class Individual {
         return self.getSex();
     }
 
-    public Collection<String> getNames() {
-        Collection<String> names = new ArrayList<>();
+    public Collection<Name> getNames() {
+        Collection<Name> names = new ArrayList<>();
         for (NAME name : self.NAME()) {
-            names.add(name.getName().replace("/", "").replace("\"", "'")); // otherwise messes with LaTeX
+            String annotatedName = name.getName().replace("?", "").replace("\\", "");
+            Optional<String> givenName = name.getGivenName();
+            Optional<String> surname = name.getSurname();
+
+            names.add(new Name(annotatedName, givenName.orElse(""), surname.orElse("")));
         }
         return names;
     }
@@ -87,6 +87,58 @@ public class Individual {
         return children;
     }
 
+    public Collection<DatePlace> getBirths() {
+        Collection<DatePlace> births = new ArrayList<>();
+        for (BIRT birth : self.BIRT()) {
+            Optional<String> date = birth.getDate();
+            Optional<String> place = birth.getPlace();
+
+            if (date.isPresent() || place.isPresent()) {
+                births.add(new DatePlace(date.orElse(""), place.orElse("")));
+            }
+        }
+        return births;
+    }
+
+    public Collection<DatePlace> getBaptisms() {
+        Collection<DatePlace> baptisms = new ArrayList<>();
+        for (CHR baptism : self.CHR()) {
+            Optional<String> date = baptism.getDate();
+            Optional<String> place = baptism.getPlace();
+
+            if (date.isPresent() || place.isPresent()) {
+                baptisms.add(new DatePlace(date.orElse(""), place.orElse("")));
+            }
+        }
+        return baptisms;
+    }
+
+    public Collection<DatePlace> getDeaths() {
+        Collection<DatePlace> deaths = new ArrayList<>();
+        for (DEAT death : self.DEAT()) {
+            Optional<String> date = death.getDate();
+            Optional<String> place = death.getPlace();
+
+            if (date.isPresent() || place.isPresent()) {
+                deaths.add(new DatePlace(date.orElse(""), place.orElse("")));
+            }
+        }
+        return deaths;
+    }
+
+    public Collection<DatePlace> getBurials() {
+        Collection<DatePlace> burials = new ArrayList<>();
+        for (BURI burial : self.BURI()) {
+            Optional<String> date = burial.getDate();
+            Optional<String> place = burial.getPlace();
+
+            if (date.isPresent() || place.isPresent()) {
+                burials.add(new DatePlace(date.orElse(""), place.orElse("")));
+            }
+        }
+        return burials;
+    }
+
     @Override
     public String toString() {
         StringBuilder buf = new StringBuilder("[Individual");
@@ -104,37 +156,48 @@ public class Individual {
         return buf.toString();
     }
 
-/*
-{
-    parent[id=@F500002@] {
-      % proband
-      g[id=@I500111@,male]{Mads Pedersen}
-
-       parent {
-         g[id=@I500112@,male]{Peder Petersen}
-       }
-       parent {
-         g[id=@I500113@,female]{Karen Olsdatter}
-       }
-     }
-}
- */
 public String asProband() {
     StringBuilder buf = new StringBuilder("g[");
     buf.append("id=").append(getId());
-    buf.append(",").append(self.getSex().name());
+    buf.append(",").append(self.getSex().name().toLowerCase()); // lower case because of genealogytree package
     buf.append("]").append("{");
 
-    for (NAME name : self.NAME()) {
-        Optional<String> givenName = name.getGivenName();
-        Optional<String> surname = name.getSurname();
+    String displayedName = "";
+    for (Name name : getNames()) {
+        String givenName = name.givenName();
+        String surname = name.surname();
 
-        if (givenName.isPresent() || surname.isPresent()) {
-            givenName.ifPresent(s -> buf.append(s.replace("\"", "'")).append(" "));
-            surname.ifPresent(s -> buf.append("\\surn{").append(s.replace("\"", "'")).append("}"));
+        if (!givenName.isEmpty() || !surname.isEmpty()) {
+            displayedName = givenName.replace("\"", "'");
+            displayedName += " ";
+            displayedName += "\\surn{";
+            displayedName += surname.replace("\"", "'");
+            displayedName += "}";
+            break;
+        } else {
+            displayedName = name.annotatedName().replace("/", "");
+        }
+    }
+    buf.append(displayedName);
+
+    if (!displayedName.isEmpty()) {
+        for (DatePlace birth : getBirths()) {
+            String date = birth.date();
+            if (!date.isEmpty()) {
+                buf.append("\\\\\\gtrsymBorn\\,").append(birth.date().toLowerCase());
+            }
+            break;
+        }
+        for (DatePlace death : getDeaths()) {
+            String date = death.date();
+            if (!date.isEmpty()) {
+                buf.append("\\\\\\gtrsymDied\\,").append(death.date().toLowerCase());
+            }
             break;
         }
     }
+
+    //buf.append(" \\ref{sec:").append(getId()).append("}");
     buf.append("}");
     return buf.toString();
 }
