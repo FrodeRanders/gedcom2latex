@@ -267,7 +267,7 @@ public class Application {
                     // born(date, place)
                     for (DatePlace birth : individual.getBirths()) {
                         ST template = group.getInstanceOf("born");
-                        template.add("date", birth.date());
+                        template.add("date", birth.date().toLowerCase());
                         template.add("place", birth.place());
                         s.append(template.render());
                     }
@@ -275,7 +275,7 @@ public class Application {
                     // baptism(date, place)
                     for (DatePlace baptism : individual.getBaptisms()) {
                         ST template = group.getInstanceOf("baptism");
-                        template.add("date", baptism.date());
+                        template.add("date", baptism.date().toLowerCase());
                         template.add("place", baptism.place());
                         s.append(template.render());
                     }
@@ -283,7 +283,7 @@ public class Application {
                     // death(date, place)
                     for (DatePlace death : individual.getDeaths()) {
                         ST template = group.getInstanceOf("death");
-                        template.add("date", death.date());
+                        template.add("date", death.date().toLowerCase());
                         template.add("place", death.place());
                         s.append(template.render());
                     }
@@ -291,7 +291,7 @@ public class Application {
                     // burial(date, place)
                     for (DatePlace burial : individual.getBurials()) {
                         ST template = group.getInstanceOf("burial");
-                        template.add("date", burial.date());
+                        template.add("date", burial.date().toLowerCase());
                         template.add("place", burial.place());
                         s.append(template.render());
                     }
@@ -385,7 +385,7 @@ public class Application {
         options.addOption(Option.builder("d")
                 .required(false)
                 .hasArgs()
-                .desc("Directoy where output is produced")
+                .desc("Directory where output is produced")
                 .longOpt("directory")
                 .build());
 

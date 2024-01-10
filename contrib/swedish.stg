@@ -129,6 +129,9 @@ genealogygraph_horizontal(graph) ::= <<
 $graph$
 \end{tikzpicture}
 
+\vspace{.5cm}
+
+
 >>
 
 genealogygraph_vertical(graph) ::= <<
@@ -165,6 +168,7 @@ $graph$
 >>
 
 individual(id, name, sex) ::= <<
+\vspace{.5cm}
 
 % Individual $id$
 \addcontentsline{toc}{section}{$name$}\index{$name$}
@@ -173,38 +177,41 @@ individual(id, name, sex) ::= <<
 >>
 
 additionalName(name) ::= <<
-\paragraph{
 Annat namn $name$
-}
+
 
 >>
 
+// \textborn
 born(date, place) ::= <<
-\paragraph{
-}
+Född $date$ $place$
+
 
 >>
 
 baptism(date, place) ::= <<
-\paragraph{
-}
+Döpt $date$ $place$
+
 
 >>
 
+// \textmarried
 married(date, place) ::= <<
-\paragraph{
-}
+Gift $date$ $place$
+
 
 >>
 
+// \textdied
 death(date, place) ::= <<
-\paragraph{
-}
+Död $date$ $place$
+
 
 >>
 
+// \textleaf
 burial(date, place) ::= <<
-\paragraph{
-}
+Begravd $date$ $place$
+
 
 >>
