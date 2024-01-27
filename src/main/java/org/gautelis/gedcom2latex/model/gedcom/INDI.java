@@ -119,6 +119,7 @@ public class INDI implements Record {
     private final Collection<BURI> burials = new ArrayList<>();
     private final Collection<FAMC> childToFamilyLinks = new ArrayList<>(); // Child to family links
     private final Collection<FAMS> spouseToFamilyLinks = new ArrayList<>(); // Spouse to family links
+    private final Collection<OBJE> multimediaRecords = new ArrayList<>();
 
 
 
@@ -148,6 +149,9 @@ public class INDI implements Record {
 
         Collection<Structure> _spouseToFamilyLinks = structure.getNestedStructures("FAMS");
         _spouseToFamilyLinks.stream().map(FAMS::new).forEach(spouseToFamilyLinks::add);
+
+        Collection<Structure> _multimediaRecords = structure.getNestedStructures("OBJE");
+        _multimediaRecords.stream().map(OBJE::new).forEach(multimediaRecords::add);
     }
 
     public String getId() {
@@ -186,6 +190,10 @@ public class INDI implements Record {
         return spouseToFamilyLinks;
     }
 
+    public Collection<OBJE> OBJE() {
+        return multimediaRecords;
+    }
+
     public String toString() {
         StringBuffer buf = new StringBuffer("[INDI (individual)");
         buf.append(" id=").append(null != id ? id : "");
@@ -197,6 +205,7 @@ public class INDI implements Record {
         BURI().forEach(buf::append);
         FAMC().forEach(buf::append);
         FAMS().forEach(buf::append);
+        OBJE().forEach(buf::append);
         buf.append("]");
         return buf.toString();
     }
