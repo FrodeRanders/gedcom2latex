@@ -157,6 +157,7 @@ public class Application {
 
         Set<Individual> myFamily = breadthFirstTraversal(me);
         for (Individual individual : myFamily) {
+            out.println("---");
             Collection<Name> names = individual.getNames();
             for (Name name : names) {
                 out.print(name.annotatedName());
@@ -181,6 +182,7 @@ public class Application {
             for (URI uri : uris) {
                 out.println("URI: " + uri);
             }
+            out.println();
         }
         out.println("-------------------");
 
