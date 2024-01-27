@@ -1,14 +1,10 @@
 package org.gautelis.gedcom2latex;
 
 import org.gautelis.gedcom2latex.model.Structure;
-import org.gautelis.gedcom2latex.model.gedcom.HEAD;
-import org.gautelis.gedcom2latex.model.gedcom.INDI;
-import org.gautelis.gedcom2latex.model.gedcom.FAM;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 
 public class LineHandler {

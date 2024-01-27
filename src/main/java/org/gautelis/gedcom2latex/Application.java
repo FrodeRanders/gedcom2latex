@@ -19,6 +19,7 @@ import org.stringtemplate.v4.STGroup;
 //import org.stringtemplate.v4.STGroup;
 
 import java.io.*;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.LocalDate;
@@ -176,7 +177,10 @@ public class Application {
                 out.println();
             }
 
-            Collection<>
+            Collection<URI> uris = individual.getURIs();
+            for (URI uri : uris) {
+                out.println("URI: " + uri);
+            }
         }
         out.println("-------------------");
 

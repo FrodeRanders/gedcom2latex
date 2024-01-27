@@ -1,10 +1,17 @@
 package org.gautelis.gedcom2latex.model;
 
+import org.gautelis.gedcom2latex.LineHandler;
 import org.gautelis.gedcom2latex.model.gedcom.*;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Individual {
+    private static final Logger log = LoggerFactory.getLogger(Individual.class);
+
     private final INDI self;
     private Individual father;
     private Individual mother;
@@ -137,6 +144,27 @@ public class Individual {
             }
         }
         return burials;
+    }
+
+    public Collection<URI> getURIs() {
+        Collection<URI> uris = new ArrayList<>();
+        for (OBJE record : self.OBJE()) {
+            Collection<FILE> files = record.FILE();
+            for (FILE file : files) {
+                String reference = file.getReference();
+                if (null != reference && (reference.startsWith("http:") || reference.startsWith("https:"))) {
+                    try {
+                        URI uri = new URI(reference);
+                        uris.add(uri);
+                    } catch (URISyntaxException urise) {
+                        String info = "Cant treat reference: \"" + reference + "\": ";
+                        info += urise.getMessage();
+                        log.info(info, urise);
+                    }
+                }
+            }
+        }
+        return uris;
     }
 
     @Override
