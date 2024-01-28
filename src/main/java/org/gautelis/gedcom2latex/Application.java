@@ -1,6 +1,7 @@
 package org.gautelis.gedcom2latex;
 
 import org.apache.commons.io.output.FileWriterWithEncoding;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.commons.cli.CommandLine;
@@ -112,11 +113,11 @@ public class Application {
             Optional<GEDC> gedc = head.get().GEDC();
             gedc.ifPresent(value -> out.println("GEDCOM version: " + value.getVersionNumber()));
         }
-        */
+         */
 
-        out.println("--- FAMILIES ---");
+        //out.println("--- FAMILIES ---");
         for (FAM family : Structure.getFAMs(structures)) {
-            out.println(family);
+            //out.println(family);
             String familyId = family.getId();
 
             Individual father = null;
@@ -134,7 +135,7 @@ public class Application {
             }
 
             for (String childId : family.getChildrenId()) {
-                out.println("Looking up child with id=" + childId);
+                //out.println("Looking up child with id=" + childId);
                 Individual child = individuals.get(childId);
                 if (null != child) {
                     if (null != father) {
@@ -147,30 +148,34 @@ public class Application {
             }
         }
 
+        /*
         out.println("--- INDIVIDUALS ---");
         for (Individual individual : individuals.values()) {
             out.println(individual);
-        }
 
-        out.println("-------------------");
+         */
+
         Individual me = individuals.get("@I500003@"); // for now :)
 
-        Set<Individual> myFamily = breadthFirstTraversal(me);
-        for (Individual individual : myFamily) {
-            out.println("---");
+        Set<Individual> myAncestors = breadthFirstTraversal(me);
+        for (Individual individual : myAncestors) {
+            out.println("-------------------");
             Collection<Name> names = individual.getNames();
             for (Name name : names) {
                 out.print(name.annotatedName());
+                out.print(" " + individual.getId());
 
-                Collection<Individual> spouses = individual.getSpouses();
+                Collection<ImmutablePair</* family ID */ String, Individual>> spouses = individual.getSpouses();
                 if (!spouses.isEmpty()) {
                     out.println();
 
-                    for (Individual spouse : spouses) {
+                    for (ImmutablePair</* family ID */ String, Individual> spouse : spouses) {
                         out.print("   +> ");
-                        Collection<Name> spouseNames = spouse.getNames();
+                        String familyId = spouse.left;
+                        Collection<Name> spouseNames = spouse.right.getNames();
                         for (Name spouseName : spouseNames) {
                             out.print("\"" + spouseName.annotatedName() + "\" ");
+                            out.print(familyId);
                         }
                         out.println();
                     }
@@ -179,10 +184,12 @@ public class Application {
             }
 
             Collection<URI> uris = individual.getURIs();
-            for (URI uri : uris) {
-                out.println("URI: " + uri);
+            if (!uris.isEmpty()) {
+                for (URI uri : uris) {
+                    out.println(uri);
+                }
+                out.println();
             }
-            out.println();
         }
         out.println("-------------------");
 

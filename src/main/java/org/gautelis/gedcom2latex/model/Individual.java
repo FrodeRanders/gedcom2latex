@@ -1,5 +1,6 @@
 package org.gautelis.gedcom2latex.model;
 
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.gautelis.gedcom2latex.LineHandler;
 import org.gautelis.gedcom2latex.model.gedcom.*;
 
@@ -81,8 +82,10 @@ public class Individual {
         }
     }
 
-    public Collection<Individual> getSpouses() {
-        return spouses.values();
+    public Collection<ImmutablePair</* family ID */ String, Individual>> getSpouses() {
+        Collection<ImmutablePair<String, Individual>> s = new ArrayList<>();
+        spouses.forEach((id, individual) -> s.add(ImmutablePair.of(id, individual)));
+        return s;
     }
 
     public void addChild(Individual child) {
