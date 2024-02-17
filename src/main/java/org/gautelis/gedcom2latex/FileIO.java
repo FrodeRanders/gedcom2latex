@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
@@ -122,10 +123,10 @@ public class FileIO {
 
     private static final String USER_AGENT = "Mozilla/5.0";
 
-    private boolean download(String url, File file) throws IOException {
+    public static boolean download(URI uri, File file) throws IOException {
         try (CloseableHttpClient client = HttpClients.createDefault()) {
 
-            HttpGet getMethod = new HttpGet(url);
+            HttpGet getMethod = new HttpGet(uri);
             getMethod.addHeader("User-Agent", USER_AGENT);
 
             HttpResponse rawResponse = client.execute(getMethod);
@@ -133,14 +134,14 @@ public class FileIO {
             if (200 == status) {
                 HttpEntity entity = rawResponse.getEntity();
                 Header contentType = entity.getContentType();
-                log.debug("Download {} from {} [{}]", file.getName(), url, contentType.getValue());
+                log.debug("Download {} from {} [{}]", file.getName(), uri, contentType.getValue());
 
                 writeToFile(entity.getContent(), file);
                 return true;
 
             } else {
                 log.warn("Failed to retrieve data from {}: [{}] {}",
-                        url, status, rawResponse.getStatusLine().getReasonPhrase());
+                        uri, status, rawResponse.getStatusLine().getReasonPhrase());
             }
 
             return false;

@@ -185,8 +185,27 @@ public class Application {
 
             Collection<URI> uris = individual.getURIs();
             if (!uris.isEmpty()) {
+                File directory = new File("./download");
+                if (!directory.exists()) {
+                    if (!directory.mkdir()) {
+                        log.warn("Failed to create download directory");
+                        return individuals;
+                    };
+                }
                 for (URI uri : uris) {
-                    out.println(uri);
+                    String path = uri.getPath();
+                    out.println(path);
+                    if (path.contains("/")) {
+                        String filename = path.substring(path.lastIndexOf('/') + 1);
+                        File file = new File(directory, filename);
+                        if (!file.exists()) {
+                            try {
+                                FileIO.download(uri, file);
+                            } catch (IOException ioe) {
+                                log.info("Failed to download from URI {}: {}", uri, ioe.getMessage());
+                            }
+                        }
+                    }
                 }
                 out.println();
             }

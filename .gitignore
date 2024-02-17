@@ -5,3 +5,4 @@ target/
 latex/
 *.log
 *.txt
+.DS_Store/
