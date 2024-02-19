@@ -120,11 +120,12 @@ public class INDI implements Record {
     private final Collection<FAMC> childToFamilyLinks = new ArrayList<>(); // Child to family links
     private final Collection<FAMS> spouseToFamilyLinks = new ArrayList<>(); // Spouse to family links
     private final Collection<OBJE> multimediaRecords = new ArrayList<>();
+    private final Collection<SOUR> sources = new ArrayList<>();
 
 
 
     public INDI(Structure structure) {
-        Optional<String> _id = structure.getID();
+        Optional<String> _id = structure.getPointer();
         id = _id.orElse("<unknown>");
 
         sex = SEX.from(structure.getNestedData("SEX", "U"));
@@ -152,6 +153,10 @@ public class INDI implements Record {
 
         Collection<Structure> _multimediaRecords = structure.getNestedStructures("OBJE");
         _multimediaRecords.stream().map(OBJE::new).forEach(multimediaRecords::add);
+
+        Collection<Structure> _sources = structure.getNestedStructures("SOUR");
+        _sources.stream().map(SOUR::new).forEach(sources::add);
+
     }
 
     public String getId() {
@@ -194,6 +199,10 @@ public class INDI implements Record {
         return multimediaRecords;
     }
 
+    public Collection<SOUR> SOUR() {
+        return sources;
+    }
+
     public String toString() {
         StringBuffer buf = new StringBuffer("[INDI (individual)");
         buf.append(" id=").append(null != id ? id : "");
@@ -206,6 +215,7 @@ public class INDI implements Record {
         FAMC().forEach(buf::append);
         FAMS().forEach(buf::append);
         OBJE().forEach(buf::append);
+        SOUR().forEach(buf::append);
         buf.append("]");
         return buf.toString();
     }

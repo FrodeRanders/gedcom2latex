@@ -91,7 +91,7 @@ public class OBJE implements Record {
     private final Collection<FILE> files = new ArrayList<>();
 
     public OBJE(Structure structure) {
-        Optional<String> _id = structure.getID();
+        Optional<String> _id = structure.getPointer();
         id = _id.orElse(null);
 
         Collection<Structure> _files = structure.getNestedStructures("FILE");

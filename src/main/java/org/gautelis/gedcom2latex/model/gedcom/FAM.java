@@ -79,7 +79,7 @@ public class FAM implements Record {
     private final Collection<String> childrenId = new ArrayList<>();
 
     public FAM(Structure structure) {
-        Optional<String> _id = structure.getID();
+        Optional<String> _id = structure.getPointer();
         id = _id.orElse("<unknown>");
 
         husbandId = structure.getNestedData("HUSB", null);

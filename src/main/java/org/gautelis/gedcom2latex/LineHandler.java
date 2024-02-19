@@ -45,7 +45,7 @@ public class LineHandler {
             taggedStructures.add(structure);
 
             // Store indexed on ID (excludes HEAD, TRLR)
-            Optional<String> id = structure.getID();
+            Optional<String> id = structure.getPointer();
             id.ifPresent(s -> index.put(s, structure));
         }
 

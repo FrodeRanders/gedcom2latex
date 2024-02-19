@@ -1,6 +1,11 @@
 package org.gautelis.gedcom2latex.model.gedcom;
 
 import org.gautelis.gedcom2latex.model.Record;
+import org.gautelis.gedcom2latex.model.Structure;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Optional;
 
 /**
  * A GEDCOM SOUR record.
@@ -19,8 +24,25 @@ import org.gautelis.gedcom2latex.model.Record;
  * </pre>
  */
 public class SOUR implements Record {
+    private final String sourceId;
+    private final Collection<DATA> data = new ArrayList<>();
+
+    public SOUR(Structure structure) {
+        Optional<String> _sourceId = structure.getData();
+        sourceId = _sourceId.orElse("<unknown>");
+
+        Collection<Structure> _data = structure.getNestedStructures("DATA");
+        _data.stream().map(DATA::new).forEach(data::add);
+    }
+
+    public Collection<DATA> DATA() {
+        return data;
+    }
+
     public String toString() {
-        StringBuffer buf = new StringBuffer("[SOUR (source) ...");
+        StringBuffer buf = new StringBuffer("[SOUR (source)");
+        buf.append(" id=").append(null != sourceId ? sourceId : "").append(" ");
+        DATA().forEach(buf::append);
         buf.append("]");
         return buf.toString();
     }

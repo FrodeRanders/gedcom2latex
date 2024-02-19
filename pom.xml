@@ -19,11 +19,18 @@
     <commons.lang.version>3.14.0</commons.lang.version>
     <httpclient.version>4.5.14</httpclient.version>
     <junit.version>4.13.2</junit.version>
+    <jsoup.version>1.17.2</jsoup.version>
     <log4j.version>2.13.3</log4j.version>
     <slf4j.version>1.7.36</slf4j.version>
   </properties>
 
   <dependencies>
+    <dependency>
+      <groupId>org.jsoup</groupId>
+      <artifactId>jsoup</artifactId>
+      <version>${jsoup.version}</version>
+    </dependency>
+
     <dependency>
       <groupId>org.antlr</groupId>
       <artifactId>ST4</artifactId>

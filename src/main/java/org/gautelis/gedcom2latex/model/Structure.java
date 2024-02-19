@@ -85,7 +85,7 @@ public class Structure {
         return level;
     }
 
-    public Optional<String> getID() {
+    public Optional<String> getPointer() {
         return Optional.ofNullable(pointer);
     }
 

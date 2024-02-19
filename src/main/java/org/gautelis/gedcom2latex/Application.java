@@ -148,12 +148,12 @@ public class Application {
             }
         }
 
-        /*
+
         out.println("--- INDIVIDUALS ---");
         for (Individual individual : individuals.values()) {
             out.println(individual);
+        }
 
-         */
 
         Individual me = individuals.get("@I500003@"); // for now :)
 
