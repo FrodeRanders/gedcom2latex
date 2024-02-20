@@ -41,7 +41,7 @@ public class TEXT implements Record {
         return text;
     }
 
-    public String getString() {
+    private String getText() {
         StringBuilder buf = new StringBuilder();
         for (String s : text) {
             buf.append(s);
@@ -51,8 +51,7 @@ public class TEXT implements Record {
 
     public String toString() {
         StringBuffer buf = new StringBuffer("[TEXT (text) ");
-        //get().forEach(buf::append);
-        buf.append(getString());
+         buf.append(getText());
         buf.append("]");
         return buf.toString();
     }

@@ -170,6 +170,67 @@ public class Individual {
         return uris;
     }
 
+    public String getSourceLatex() {
+        Collection<String> texts = new ArrayList<>();
+        //texts.add("\\vspace{.5cm}");
+
+        for (SOUR source : self.SOUR()) {
+            for (DATA data : source.DATA()) {
+                for (TEXT text : data.TEXT()) {
+                    texts.addAll(text.get());
+                }
+            }
+        }
+
+        StringBuilder buf = new StringBuilder();
+        for (String t : texts) {
+            buf.append(t);
+        }
+
+        return buf.toString()
+                //
+                .replaceAll("&amp.", "&") // may be replaced next
+                .replaceAll("&gt.", ">")
+                .replaceAll("&lt.", "<")
+                //
+                .replaceAll("<[Bb][Rr]>", "\n\n")
+                // paragraph borders
+                .replaceAll("<[Pp]>", "\\\\par ")
+                .replaceAll("</[Pp]>", "")
+                // headings
+                .replaceAll("<[Hh]n>", "\\\\part{")
+                .replaceAll("</[Hh]n>", "}")
+                //
+                .replaceAll("<[Pp][^>]*>", "\\\\vspace{.5cm}")
+                .replaceAll("</[Pp]>", "")
+                // drop span tag
+                .replaceAll("<[Ss][Pp][Aa][Nn][^>]*>", "")
+                .replaceAll("</[Ss][Pp][Aa][Nn]>", "")
+                // strong tag
+                .replaceAll("<[Ss][Tt][Rr][Oo][Nn][Gg]>", "")
+                .replaceAll("</[Ss][Tt][Rr][Oo][Nn][Gg]>", "")
+                // italics
+                .replaceAll("<it>\\([^<]*\\)</it>", "{\\\\it \\1 }")
+                // itemize
+                .replaceAll("<[Uu][Ll]>", "\\\\begin{itemize}")
+                .replaceAll("</[Uu][Ll]>", "\\\\end{itemize}")
+                .replaceAll("<[Ll][Ii]>", "\\\\item ")
+                //
+                .replaceAll("&oslash.", "ø")
+                .replaceAll("&aring.", "å")
+                .replaceAll("&aelig.", "æ")
+                .replaceAll("&nbsp.", "")
+                // character set translations for LaTex special chars
+                .replace("%", "\\%")
+                .replace("$", "\\$")
+                .replace("&", "\\&")
+                .replace("#", "\\#")
+                .replace("_", "\\_")
+                .replace("~", "\\~")
+                .replace("\uFFFD", "") // in case a unicode char is broken at a CONC border
+                ;
+    }
+
     @Override
     public String toString() {
         StringBuilder buf = new StringBuilder("[Individual");
