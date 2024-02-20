@@ -28,6 +28,7 @@ preamble(date) ::= <<
 \usepackage[T1]{fontenc}
 \usepackage[swedish]{babel}
 \usepackage[swedish]{varioref}
+\usepackage{hyperref}
 
 \usepackage[useregional]{datetime2}
 %%\renewcommand{\dateseparator}{-}

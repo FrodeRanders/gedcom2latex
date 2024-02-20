@@ -1,17 +1,22 @@
 package org.gautelis.gedcom2latex.model;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.gautelis.gedcom2latex.LineHandler;
 import org.gautelis.gedcom2latex.model.gedcom.*;
 
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class Individual {
     private static final Logger log = LoggerFactory.getLogger(Individual.class);
+
+    private static String ANCHOR_RE = "<a\\s+(?:[^>]*?\\s+)?href=\"(?<url>[^\"]*)\"[^>]*>(?<text>.*?)</a>";
+    private final Pattern anchorPattern = Pattern.compile(ANCHOR_RE, Pattern.CASE_INSENSITIVE);
 
     private final INDI self;
     private Individual father;
@@ -182,35 +187,34 @@ public class Individual {
             }
         }
 
-        StringBuilder buf = new StringBuilder();
+        StringBuffer buf1 = new StringBuffer();
         for (String t : texts) {
-            buf.append(t);
+            buf1.append(t);
         }
 
-        return buf.toString()
+        String buf2 = buf1.toString()
                 //
                 .replaceAll("&amp.", "&") // may be replaced next
                 .replaceAll("&gt.", ">")
                 .replaceAll("&lt.", "<")
                 //
-                .replaceAll("<[Bb][Rr]>", "\n\n")
-                // paragraph borders
-                .replaceAll("<[Pp]>", "\\\\par ")
-                .replaceAll("</[Pp]>", "")
-                // headings
-                .replaceAll("<[Hh]n>", "\\\\part{")
-                .replaceAll("</[Hh]n>", "}")
+                //\href{url}{http://www.texample.net/tikz/resources/}
+                // 1801 Lokøen på Bø (<a href="https://www.digitalarkivet.no/census/person/pf01058487000306">https://www.di
+                //()
                 //
-                .replaceAll("<[Pp][^>]*>", "\\\\vspace{.5cm}")
+                .replaceAll("<[Bb][Rr]>", "\n\n")
+                // paragraph
+                .replaceAll("<[Pp][^>]*>", "\\\\par\n")
                 .replaceAll("</[Pp]>", "")
                 // drop span tag
                 .replaceAll("<[Ss][Pp][Aa][Nn][^>]*>", "")
                 .replaceAll("</[Ss][Pp][Aa][Nn]>", "")
                 // strong tag
-                .replaceAll("<[Ss][Tt][Rr][Oo][Nn][Gg]>", "")
-                .replaceAll("</[Ss][Tt][Rr][Oo][Nn][Gg]>", "")
+                .replaceAll("<[Ss][Tt][Rr][Oo][Nn][Gg][^>]*>", "\\\\textbf{")
+                .replaceAll("</[Ss][Tt][Rr][Oo][Nn][Gg]>", "}")
                 // italics
-                .replaceAll("<it>\\([^<]*\\)</it>", "{\\\\it \\1 }")
+                .replaceAll("<[Ii][Tt]>", "\\\\textit{")
+                .replaceAll("</[Ii][Tt]>", "}")
                 // itemize
                 .replaceAll("<[Uu][Ll]>", "\\\\begin{itemize}")
                 .replaceAll("</[Uu][Ll]>", "\\\\end{itemize}")
@@ -229,6 +233,16 @@ public class Individual {
                 .replace("~", "\\~")
                 .replace("\uFFFD", "") // in case a unicode char is broken at a CONC border
                 ;
+
+        // Replace HTML anchors (needs another scheme than above)
+        Matcher matcher = anchorPattern.matcher(buf2);
+
+        while (matcher.find()) {
+            // Replace each match with the LaTeX construct
+            buf2 = buf2.replace(matcher.group(), "\\href{" + matcher.group("url") + "}{" + matcher.group("text") + "}");
+        }
+
+        return buf2;
     }
 
     @Override
