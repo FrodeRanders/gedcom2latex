@@ -275,7 +275,7 @@ public class Application {
                         template.add("id", individual.getId());
                         if (niter.hasNext()) {
                             Name name = niter.next();
-                            template.add("name", name.annotatedName().replace("/", ""));
+                            template.add("name", name.annotatedName().replace("/", "").replace("\"", "'"));
                         } else {
                             template.add("name", individual.getId());
                         }
