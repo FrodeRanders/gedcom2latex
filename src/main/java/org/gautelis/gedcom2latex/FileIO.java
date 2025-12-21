@@ -1,11 +1,13 @@
 package org.gautelis.gedcom2latex;
 
-import org.apache.http.Header;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
+import org.apache.hc.core5.http.Header;
+import org.apache.hc.core5.http.HttpEntity;
+import org.apache.hc.core5.http.HttpResponse;
+import org.apache.hc.client5.http.classic.methods.HttpGet;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.client5.http.impl.classic.HttpClients;
+import org.apache.hc.core5.http.ProtocolException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -100,25 +102,25 @@ public class FileIO {
      * Removes a file or, if a directory, a directory substructure...
      * <p>
      *
-     * @param d a file or a directory
+     * @param ford a file or a directory
      */
-    public static boolean delete(File d) {
-        if (null == d || !d.exists())
+    public static boolean delete(File ford) {
+        if (null == ford || !ford.exists())
             return true; // by definition
 
-        if (d.isDirectory()) {
-            File[] files = d.listFiles(); // and directories
+        if (ford.isDirectory()) {
+            File[] files = ford.listFiles(); // and directories
             if (null != files) {
-                for (File f : files) {
-                    if (f.isDirectory()) {
-                        delete(f);
+                for (File dorf : files) {
+                    if (dorf.isDirectory()) {
+                        delete(dorf);
                     } else {
-                        f.delete();
+                        boolean _ignored = dorf.delete();
                     }
                 }
             }
         }
-        return d.delete();
+        return ford.delete();
     }
 
     private static final String USER_AGENT = "Mozilla/5.0";
@@ -129,20 +131,26 @@ public class FileIO {
             HttpGet getMethod = new HttpGet(uri);
             getMethod.addHeader("User-Agent", USER_AGENT);
 
-            HttpResponse rawResponse = client.execute(getMethod);
-            int status = rawResponse.getStatusLine().getStatusCode();
-            if (200 == status) {
-                HttpEntity entity = rawResponse.getEntity();
-                Header contentType = entity.getContentType();
-                log.debug("Download {} from {} [{}]", file.getName(), uri, contentType.getValue());
+            try (CloseableHttpResponse response = client.execute(getMethod)) {
+                int status = response.getCode();
+                if (200 == status) {
+                    try {
+                        Header contentType = response.getHeader("Content-Type");
+                        log.debug("Download {} from {} [{}]", file.getName(), uri, contentType.getValue());
 
-                writeToFile(entity.getContent(), file);
-                return true;
-
-            } else {
-                log.warn("Failed to retrieve data from {}: [{}] {}",
-                        uri, status, rawResponse.getStatusLine().getReasonPhrase());
+                        HttpEntity entity = response.getEntity();
+                        writeToFile(entity.getContent(), file);
+                        return true;
+                    } catch (ProtocolException pe) {
+                        log.warn("Could not retrieve Content-Type: " + pe.getMessage(), pe);
+                        throw new IOException(pe);
+                    }
+                } else {
+                    log.warn("Failed to retrieve data from {}: [{}] {}",
+                            uri, status, response.getReasonPhrase());
+                }
             }
+            //HttpResponse rawResponse = client.execute(getMethod);
 
             return false;
         }
